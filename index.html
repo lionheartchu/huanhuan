@@ -1,10 +1,8 @@
 <!doctype html>
 <html lang="zh-CN">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>缓缓 · 情绪花园</title>
-<style>body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#f4efe6;color:#5a4a3a;font-family:"PingFang SC","Noto Sans SC","Microsoft YaHei",sans-serif}</style>
-</head>
-<body><p>花园正在生长，请稍后再来</p></body>
-</html>
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#f5f4f8"><meta name="description" content="缓缓，给情绪一个停靠的地方。轻量情绪日记、情绪足迹与随时开始的自我关怀。"><title>缓缓 · 给情绪一个停靠的地方</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='20' fill='%23ddd3eb'/%3E%3Cpath d='M17 36Q18 14 32 28Q46 13 47 35Q46 49 32 48Q18 49 17 36' fill='%2364547b'/%3E%3C/svg%3E"><link rel="stylesheet" href="styles.css"></head>
+<body>
+<aside class="sidebar"><a class="brand" href="#home" aria-label="缓缓首页"><span class="brand-mark"><svg viewBox="0 0 44 44" fill="none"><path d="M22 34C4 33 5 11 16 13C22 14 23 24 22 34ZM22 34C22 13 36 8 37 19C38 27 31 33 22 34Z" stroke="currentColor" stroke-width="2.2"/></svg></span><span>缓缓<small>HUAN HUAN</small></span></a><div class="side-label">留一点时间，给自己</div><nav aria-label="主导航"><a href="#home" data-view="home"><span data-icon="home"></span>此刻<span class="nav-dot"></span></a><a href="#journal" data-view="journal"><span data-icon="chart"></span>情绪足迹</a><a href="#care" data-view="care"><span data-icon="leaf"></span>关怀工具箱</a></nav><div class="side-bottom"><div class="side-note"><svg viewBox="0 0 130 80" aria-hidden="true"><path d="M18 62Q35 20 59 42T112 25" fill="none" stroke="#a999ba" stroke-width="1.3"/><path d="M44 42Q28 19 46 15Q62 16 44 42M74 46Q78 21 92 27Q101 37 74 46" fill="#e2dae9"/><circle cx="106" cy="15" r="5" fill="#d8b785"/></svg><p>不必每一天都晴朗。<br>来这里，就已经很好。</p></div><button class="text-button privacy" data-action="privacy"><span data-icon="lock"></span>只属于你的记录</button></div></aside>
+<div class="app-shell"><header class="topbar"><div id="date-label"></div><div class="top-right"><span class="local-dot"></span><span>为自己，留个片刻</span><button class="icon-button" data-action="settings" aria-label="数据与设置"><span data-icon="settings"></span></button></div></header><div id="demo-banner"></div><main id="main" tabindex="-1"></main><footer class="page-footer"><span>缓缓来，也是一种前进。</span><button class="text-button" data-action="about">关于缓缓</button></footer></div>
+<dialog id="modal"><div id="modal-content"></div></dialog><div id="toast" role="status" aria-live="polite"></div><script src="app.js"></script>
+</body></html>
