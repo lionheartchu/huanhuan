@@ -1,8 +1,34 @@
 <!doctype html>
 <html lang="zh-CN">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#f5f4f8"><meta name="description" content="缓缓，给情绪一个停靠的地方。轻量情绪日记、情绪足迹与随时开始的自我关怀。"><title>缓缓 · 给情绪一个停靠的地方</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='20' fill='%23ddd3eb'/%3E%3Cpath d='M17 36Q18 14 32 28Q46 13 47 35Q46 49 32 48Q18 49 17 36' fill='%2364547b'/%3E%3C/svg%3E"><link rel="stylesheet" href="styles.css"></head>
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#f5f4f8" media="(prefers-color-scheme: light)"><meta name="theme-color" content="#17151b" media="(prefers-color-scheme: dark)"><meta name="description" content="缓缓 HuanHuan｜情绪日记与自我关怀。难受的情绪先埋成种子，照料过后，它会开成一朵花。"><title>缓缓 · 情绪花园</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='20' fill='%23ddd3eb'/%3E%3Cpath d='M17 36Q18 14 32 28Q46 13 47 35Q46 49 32 48Q18 49 17 36' fill='%2364547b'/%3E%3C/svg%3E"><link rel="stylesheet" href="styles.css"></head>
 <body>
 <aside class="sidebar"><a class="brand" href="#home" aria-label="缓缓首页"><span class="brand-mark"><svg viewBox="0 0 44 44" fill="none"><path d="M22 34C4 33 5 11 16 13C22 14 23 24 22 34ZM22 34C22 13 36 8 37 19C38 27 31 33 22 34Z" stroke="currentColor" stroke-width="2.2"/></svg></span><span>缓缓<small>HUAN HUAN</small></span></a><div class="side-label">留一点时间，给自己</div><nav aria-label="主导航"><a href="#home" data-view="home"><span data-icon="home"></span>此刻<span class="nav-dot"></span></a><a href="#journal" data-view="journal"><span data-icon="chart"></span>情绪足迹</a><a href="#care" data-view="care"><span data-icon="leaf"></span>关怀工具箱</a></nav><div class="side-bottom"><div class="side-note"><svg viewBox="0 0 130 80" aria-hidden="true"><path d="M18 62Q35 20 59 42T112 25" fill="none" stroke="#a999ba" stroke-width="1.3"/><path d="M44 42Q28 19 46 15Q62 16 44 42M74 46Q78 21 92 27Q101 37 74 46" fill="#e2dae9"/><circle cx="106" cy="15" r="5" fill="#d8b785"/></svg><p>不必每一天都晴朗。<br>来这里，就已经很好。</p></div><button class="text-button privacy" data-action="privacy"><span data-icon="lock"></span>只属于你的记录</button></div></aside>
-<div class="app-shell"><header class="topbar"><div id="date-label"></div><div class="top-right"><span class="local-dot"></span><span>为自己，留个片刻</span><button class="icon-button" data-action="settings" aria-label="数据与设置"><span data-icon="settings"></span></button></div></header><div id="demo-banner"></div><main id="main" tabindex="-1"></main><footer class="page-footer"><span>缓缓来，也是一种前进。</span><button class="text-button" data-action="about">关于缓缓</button></footer></div>
-<dialog id="modal"><div id="modal-content"></div></dialog><div id="toast" role="status" aria-live="polite"></div><script src="app.js"></script>
+<div class="app-shell"><header class="topbar"><div id="date-label"></div><div class="top-right"><span class="local-dot"></span><span>为自己，留个片刻</span><button class="icon-button" data-action="settings" aria-label="数据与设置"><span data-icon="settings"></span></button><button class="notes-button" id="notes-toggle" data-action="notes-toggle" aria-controls="design-notes" aria-expanded="false"><span data-icon="notes"></span><span>设计说明</span></button></div></header><div id="demo-banner"></div><main id="main" tabindex="-1"></main><footer class="page-footer"><span>缓缓来，也是一种前进。</span><button class="text-button" data-action="about">关于缓缓</button></footer></div>
+<aside class="design-notes" id="design-notes" aria-label="设计说明">
+<div class="dn-head"><div><div class="eyebrow">DESIGN NOTES · V1</div><h2>设计说明</h2></div><button class="icon-button" data-action="notes-toggle" aria-label="收起设计说明"><span data-icon="close"></span></button></div>
+<p class="dn-lede">缓缓 HuanHuan｜情绪日记与自我关怀。核心隐喻：难受的情绪不必立刻处理，先埋成一颗种子；用呼吸、聆听或活动去照料它，它会被慢慢“堆肥”成一朵花。</p>
+<ol class="dn-loop"><li><b>感知</b>手表信号</li><li><b>记录</b>埋种子</li><li><b>归因</b>土层</li><li><b>调节</b>照料</li><li><b>回顾</b>开花</li></ol>
+<section class="dn-sec" data-for="home"><h3>此刻 · 花园</h3><ul>
+<li>土壤按 8 类触发因素分层，种子埋进主要触发那一层。花园本身就是一张归因图。</li>
+<li>手表提示只描述身体信号（HRV、噪音），从不替用户命名情绪，由用户来确认。</li>
+<li>20 秒内可以记完：只有情绪必选，强度默认 3，情境数据自动附带。舒服的情绪直接开成花。</li>
+<li>土壤的回应简短、不评判，按情绪轮换。</li></ul></section>
+<section class="dn-sec" data-for="home care"><h3>照料 · 开花</h3><ul>
+<li>推荐按「情绪 × 触发 × 情境」打分，从呼吸、聆听、身体中各选一种排序，每条附一句由数据算出的理由。</li>
+<li>例：睡眠不足 6 小时，用身体扫描代替散步；噪音 ≥ 65 dB，提升聆听；过往照料效果好的方法会加分。</li>
+<li>完成后，种子化成粒子，重新聚成一朵程序生成的花。花瓣数和颜色由情绪决定。</li>
+<li>环境音由 Web Audio 实时合成（慢和弦 + 滤波噪声），点击后才开始。</li></ul></section>
+<section class="dn-sec" data-for="journal"><h3>情绪足迹</h3><ul>
+<li>曲线纵轴 = 效价 × 强度（−5 ~ +5），同日取平均，空白处不插值。</li>
+<li>洞察卡片全部由本地数据实时计算。样本不足时不下结论；时段排序做了收缩，避免两三条记录就下判断。</li>
+<li>土层分析和花园的土层颜色一一对应。</li></ul></section>
+<section class="dn-sec" data-for="care"><h3>关怀工具箱</h3><ul>
+<li>保留原型的时间、精力筛选，按呼吸、聆听、身体分组。</li>
+<li>记住哪些方法让你“轻松了一点”，回顾时提示。</li>
+<li>安全卡片：全国心理援助热线 12356。强度 5 的种子、练习后“还不太舒服”时也会出现。</li></ul></section>
+<div class="dn-box dn-sec"><h3>演示数据里埋了四个规律</h3><ol><li>求职是最常见的触发</li><li>睡眠不足 6 小时的日子，焦虑更多</li><li>周日晚上偏烦躁</li><li>照料之后，下一次难受的强度更低</li></ol><p>去「情绪足迹」看看，它们有没有被算出来。</p></div>
+<div class="dn-box dn-sec"><h3>一分钟试一试</h3><ol><li>点「模拟一次信号」→「埋一颗种子」</li><li>选一种感受，埋下，看它落进对应土层</li><li>点这颗种子，选一种照料，开始，然后点「我做完了」</li><li>选一个感受，看种子开成花</li></ol></div>
+<section class="dn-sec"><h3>技术</h3><ul><li>纯静态，零外部请求：没有 CDN、网络字体和远程音频图片，在中国大陆可以直接打开。</li><li>Canvas 2D 绘制花园和粒子，SVG 绘制图表，localStorage 本地存储，并做了容错。</li><li>支持深色模式，也尊重“减少动态效果”的系统设置。</li></ul></section>
+</aside>
+<dialog id="modal"><div id="modal-content"></div></dialog><div id="toast" role="status" aria-live="polite"></div><script src="data.js"></script><script src="garden.js"></script><script src="sound.js"></script><script src="app.js"></script>
 </body></html>
