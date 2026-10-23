@@ -65,7 +65,7 @@ function inPeriod(list){return period==='all'?list.slice():HH.inRange(list,perio
 const periodText=()=>period==='all'?'全部时间':`最近 ${period} 天`;
 
 function helpCard(compact=false){return `<section class="safety-card ${compact?'compact':''}" aria-label="需要帮助"><div class="safety-icon">${icon('shield')}</div><div><h3>需要帮助</h3><p>生息不能替代专业帮助。如果有伤害自己的念头或处于危险中，请联系信任的人，或拨打：</p><div class="hotlines"><a href="tel:12356"><b>12356</b><span>心理援助热线（中国大陆）</span></a><a href="tel:110"><b>110</b><span>遇到紧急危险</span></a><a href="tel:120"><b>120</b><span>医疗急救</span></a></div><p class="source-note">12356 是国家卫生健康委设立的全国统一心理援助热线，依据中国政府网公开信息核对（2024 年 12 月发布）。不在中国大陆时，请使用当地的服务。</p></div></section>`;}
-function demoBar(){return isDemo()?`<div class="demo-bar" role="note"><span class="demo-dot" aria-hidden="true"></span><span class="demo-text"><b>示例数据</b></span><span class="demo-actions"><button class="ghost-button" data-action="demo-reset">重置<span class="dt-long">示例</span></button><button class="secondary-button small" data-action="demo-exit">退出示例</button></span></div>`:'';}
+function demoBar(){return isDemo()?`<div class="demo-bar" role="note"><span class="demo-dot" aria-hidden="true"></span><span class="demo-text"><b>示例模式</b></span><span class="demo-actions"><button class="ghost-button" data-action="demo-reset">重置<span class="dt-long">示例</span></button><button class="secondary-button small" data-action="demo-exit">退出示例</button></span></div>`:'';}
 
 /* =========================================================
    此刻 / NOW
@@ -286,12 +286,12 @@ const rf={sel:null,ctx:null,tl:null};
 const KEY_NONE='__none';
 function reflect(){
   const all=entries();
-  if(!all.length)return `${demoBar()}<section class="chapter ch-trace is-empty"><header class="ch-head"><div><div class="eyebrow">REFLECT · 01</div><h1>时间留下的痕迹</h1></div></header>
+  if(!all.length)return `${demoBar()}<section class="chapter ch-trace is-empty"><header class="ch-head"><div><h1>时间留下的痕迹</h1></div></header>
   <div class="empty-hero"><div class="empty-art">${traceSVG({id:'e1',kind:'text',form:{seed:11}},{grain:false})}${traceSVG({id:'e2',kind:'wordless',form:{seed:5}},{grain:false})}${traceSVG({id:'e3',kind:'text',form:{seed:23}},{grain:false})}</div><h2>还没有记录</h2><div class="row-btns center"><a class="primary-button" href="#now" data-view="now">写下第一条</a><button class="secondary-button" data-action="demo-enter">查看示例数据</button></div></div></section>`;
   const data=inPeriod(all);
   if(rf.sel&&!data.some(e=>bubbleKey(e)===rf.sel))rf.sel=null;
   return `${demoBar()}
-  <section class="chapter ch-trace" id="ch-1" aria-labelledby="ch1-h"><header class="ch-head"><div><div class="eyebrow">REFLECT · 01</div><h1 id="ch1-h">时间留下的痕迹</h1></div><div class="ch-tools">${periodSeg()}<button class="ghost-button" data-action="all-records">${icon('notes')}全部记录</button></div></header>
+  <section class="chapter ch-trace" id="ch-1" aria-labelledby="ch1-h"><header class="ch-head"><div><h1 id="ch1-h">时间留下的痕迹</h1></div><div class="ch-tools">${periodSeg()}<button class="ghost-button" data-action="all-records">${icon('notes')}全部记录</button></div></header>
     <div class="river-wrap reveal" id="river">${river(data)}</div></section>
   <section class="chapter ch-feel ${rf.sel?'has-sel':''}" id="ch-2" aria-labelledby="ch2-h">${chapterFeel(data)}</section>
   <section class="chapter ch-trig" id="ch-3" aria-labelledby="ch3-h">${chapterTrig(data)}</section>
@@ -357,7 +357,7 @@ function feelMode(total){return total<=0?'none':total<=2?'few':total<=5?'some':'
 function chapterFeel(data){
   const st=HH.emotionStats(data),rows=st.rows.map(r=>({key:r.name,n:r.n})),namedN=data.filter(named).length,unnamed=st.unnamed,total=data.length;
   const mode=feelMode(total),showPct=namedN>=6;
-  const head=`<header class="ch-head"><div><div class="eyebrow">REFLECT · 02</div><h2 id="ch2-h">你说过的感受</h2><p>选择一种感受，查看相关记录。</p></div>${total?`<div class="ch-meta"><b>${total}</b> 段记录<small>${periodText()}${namedN?` · ${namedN} 段已命名`:''}</small></div>`:''}</header>`;
+  const head=`<header class="ch-head"><div><h2 id="ch2-h">你说过的感受</h2><p>选择一种感受，查看相关记录。</p></div>${total?`<div class="ch-meta"><b>${total}</b> 段记录<small>${periodText()}${namedN?` · ${namedN} 段已命名`:''}</small></div>`:''}</header>`;
   if(!total)return head+`<p class="ch-empty">${periodText()}没有记录</p>`;
   // 手机上用更窄的坐标宽度，让同样条数的气泡在小屏上保持相近的实际大小
   const narrow=narrowMQ.matches,W=narrow?400:800,H=rows.length<=(narrow?2:3)?(narrow?220:260):rows.length<=6?(narrow?400:400):(narrow?480:500);
@@ -411,7 +411,7 @@ function chapterTrig(data){
   const tc={};baseList.forEach(e=>e.triggers.forEach(t=>tc[t]=(tc[t]||0)+1));
   const tops=Object.entries(tc).sort((a,b)=>b[1]-a[1]).slice(0,6),tagged=baseList.filter(e=>e.triggers.length).length;
   const c=EMO[ctx]||UNNAMED,slots=CONS_SLOTS[tops.length]||[],small=nb<6;
-  const head=`<header class="ch-head"><div><div class="eyebrow">REFLECT · 03</div><h2 id="ch3-h">和什么有关</h2></div>
+  const head=`<header class="ch-head"><div><h2 id="ch3-h">和什么有关</h2></div>
     ${present.length?`<div class="ctx-switch" role="group" aria-label="以哪种感受为中心"><button class="chip ${!ctx?'active':''}" data-action="feel-ctx" data-value="" aria-pressed="${!ctx}">全部</button>${present.map(n=>`<button class="chip ${ctx===n?'active':''}" data-action="feel-ctx" data-value="${n}" aria-pressed="${ctx===n}">${bubble(n,'bubble tiny')}${n}</button>`).join('')}</div>`:''}</header>`;
   if(!nb)return head+`<p class="ch-empty">${periodText()}没有记录</p>`;
   const center=`<div class="cons-center" style="--c:${c.c}">${Art.softBody(c.c,hash(ctx||'all'))}<span class="fb-in">${ctx?Art.faceSVG(ctx):''}<b>${ctx||'全部感受'}</b><small>${nb} 段记录</small></span></div>`;
@@ -428,7 +428,7 @@ function chapterTrig(data){
 const FIND_TITLE={trigger:f=>`「${f.big}」是你最常提到的事。`,time:f=>`${f.big}，常常是同一种感受。`,comfort:f=>`选了平静或开心时，常和「${f.big}」有关。`,practice:f=>`「${f.big}」之后的反馈`,sleep:()=>`模拟睡眠与自报焦虑（示例）`};
 function chapterFind(all){
   const d30=HH.inRange(all,30),f=HH.insights(d30,HH.inRange(sessions(),30),{demo:isDemo()}).slice(0,3);
-  return `<header class="ch-head"><div><div class="eyebrow">REFLECT · 04</div><h2 id="ch4-h">一些发现</h2><p>最近 30 天 · ${d30.length} 段记录</p></div></header>
+  return `<header class="ch-head"><div><h2 id="ch4-h">一些发现</h2><p>最近 30 天 · ${d30.length} 段记录</p></div></header>
   ${f.length?`<div class="finds reveal">${f.map((x,i)=>`<article class="find"><div class="find-no">${pad(i+1)}<i></i>${x.simulated?'<span class="sim">模拟数据</span>':''}</div><h3>${esc((FIND_TITLE[x.key]||(()=>x.big))(x))}</h3><p>${esc(x.text)}</p>${x.caveat?`<p class="find-foot">${esc(x.caveat)}</p>`:''}</article>`).join('')}</div>`
   :`<p class="ch-empty">最近 30 天有 5 段以上记录后显示。</p>`}
   <div class="closing"><div></div><a class="primary-button big" href="#now" data-view="now">继续书写${icon('arrow')}</a></div>`;
@@ -514,7 +514,7 @@ function care(){
   const pass=a=>careFilter==='all'||(careFilter==='short'?a.minutes<=3&&a.kind!=='journal':a.energy===careFilter);
   const rest=activities.filter(a=>!featured.has(a.id)&&pass(a));
   return `${demoBar()}<section class="care-top">
-    <div class="care-copy"><div class="eyebrow">关怀 / CARE</div><h1>留一分钟，<br>只属于自己。</h1>
+    <div class="care-copy"><h1>留一分钟，<br>只属于自己。</h1><p>跟随呼吸节奏，吸、停、呼、停。</p>
       <div class="row-btns"><button class="primary-button big" data-action="activity" data-id="breath">开始 1 分钟呼吸${icon('arrow')}</button><button class="secondary-button" data-action="scroll-lib">${icon('leaf')}选择其他练习</button></div>
       </div>
     <div class="care-art">${careImg('hero','care-hero-img',false)}</div>
@@ -550,7 +550,7 @@ function playerScreen(){
   const a=activeActivity,e=a.entryId&&entryById(a.entryId);
   modal(`<div class="player tint-${a.tint}">
   ${e?`<div class="caring-for">${named(e)?bubble(e.emotion,'bubble tiny'):traceSVG(e,{grain:false,cls:'trace-svg tiny'})}<span>${esc(firstLine(e))}</span></div>`:''}
-  <div class="player-head"><div class="eyebrow">${a.category}</div><h2>${a.title}</h2><p>${a.intro}</p></div>
+  <div class="player-head"><h2>${a.title}</h2><p>${a.intro}</p></div>
   <div class="player-stage">${a.kind==='breath'?`<div class="segmented center-seg" role="group" aria-label="时长">${a.choices.map(m=>`<button data-action="dur" data-value="${m}" class="${a.minutes===m?'active':''}" aria-pressed="${a.minutes===m}">${m} 分钟</button>`).join('')}</div>
     <div class="breath-orb" id="breath-orb" aria-hidden="true"><i class="bo-sage"></i><i class="bo-peach"></i><i class="bo-body"></i><i class="bo-inner"></i></div><p class="breath-phase" id="breath-phase" aria-live="polite"></p>`
   :a.kind==='sound'?`<div class="sound-viz" id="sound-viz" aria-hidden="true">${Array.from({length:21},(_,i)=>`<i style="--h:${(30+Math.abs(Math.sin(i*1.7))*60).toFixed(0)}%;--d:${(i%7)*.13}s"></i>`).join('')}</div><div class="volume-row"><label for="volume">音量</label><input type="range" min="0" max="100" value="${Math.round(volume*100)}" id="volume"></div>`

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 560" preserveAspectRatio="none">
+  <defs>
+    <linearGradient id="pigment" x1="0" y1="100" x2="0" y2="480" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#c2b1dc" stop-opacity=".3"/>
+      <stop offset=".55" stop-color="#c2b1dc" stop-opacity=".13"/>
+      <stop offset="1" stop-color="#c2b1dc" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="feather" x="-5%" y="-5%" width="110%" height="110%"><feGaussianBlur stdDeviation="3"/></filter>
+  </defs>
+  <path d="M-40 184 C70 175 127 132 213 142 L286 116 C327 127 352 158 391 166 C456 168 478 156 518 173 C590 198 618 225 700 232 C827 238 883 277 974 284 C1110 292 1240 321 1480 306 L1480 560 H-40Z" fill="url(#pigment)" filter="url(#feather)"/>
+</svg>

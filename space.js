@@ -9,7 +9,7 @@
    reduced motion：不跑动画循环，只在事件发生时画静态的状态。 */
 (function(root){
 const TAU=Math.PI*2,N=64;
-const mqD=matchMedia('(prefers-color-scheme: dark)'),mqR=matchMedia('(prefers-reduced-motion: reduce)');
+const mqR=matchMedia('(prefers-reduced-motion: reduce)');
 const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
 const k=(dt,tau)=>1-Math.exp(-dt/tau);
 function rgb(h){const n=parseInt(h.slice(1),16);return[n>>16&255,n>>8&255,n&255];}
@@ -24,16 +24,13 @@ const LAYERS=[
   {key:'inner',off:[.14,-.06],r:.5, sx:1.12,sy:.82,base:[.06,.2,.03,2.8],lag:.8, amp:.04, spread:[.06,-.07]}
 ];
 const S={on:false,raf:0,abort:null,sec:null,cv:null,c:null,hit:null,W:0,H:0,dpr:1,grain:null,io:null,visible:true,
-  dark:mqD.matches,rm:mqR.matches,cb:{},last:0,ripples:[],pulses:[],trail:[],
+  rm:mqR.matches,cb:{},last:0,ripples:[],pulses:[],trail:[],
   o:{cx:0,cy:0,R:90,ox:0,oy:0,vx:0,vy:0,press:0,warm:0,appr:0,focus:false,hold:false,kb:false,holdStart:0,holdTotal:0,
      ptr:{x:0,y:0,sx:0,sy:0,vx:0,vy:0,inside:false,init:false}},
   L:LAYERS.map((l,i)=>Object.assign({},l,{p:new Float32Array(N),pv:new Float32Array(N),ox:0,oy:0,vx:0,vy:0,ph:[i*1.7,i*2.3+1,i*.9+2]}))};
 /* 哑光、颜料感：每一层内部有多个色相的过渡；没有白色高光边、没有镜面反射 */
-const pal=()=>S.dark?{
-  sage:['#7d977c','#5f7a63','#8a8a62'],peach:['#c69a7c','#a87a74','#8f7393'],body:['#cbbfe0','#8f82b8','#6d7fa0'],inner:'#e9dccb',
-  glow:'#8f7fbb',warmGlow:'#c9a07c',line:'rgba(226,203,160,.45)',bead:['#a9c3a3','#76917a'],shadow:'rgba(0,0,0,.35)',speck:['#d7b08c','#a898cf']}
-  :{sage:['#e3ecd8','#b8cfae','#ece2c2'],peach:['#fbe5cf','#efbf9c','#e7c4d3'],body:['#faf4ec','#e4d9f3','#cdc1e8','#dfe3f0'],inner:'#fbf3e6',
-  glow:'#d4c8ec',warmGlow:'#f3d6b6',line:'rgba(214,184,130,.62)',bead:['#c9dcc2','#96b493'],shadow:'rgba(96,78,130,.18)',speck:['#efc39d','#bdaedf']};
+const pal=()=>({sage:['#e3ecd8','#b8cfae','#ece2c2'],peach:['#fbe5cf','#efbf9c','#e7c4d3'],body:['#faf4ec','#e4d9f3','#cdc1e8','#dfe3f0'],inner:'#fbf3e6',
+  glow:'#d4c8ec',warmGlow:'#f3d6b6',line:'rgba(214,184,130,.62)',bead:['#c9dcc2','#96b493'],shadow:'rgba(96,78,130,.18)',speck:['#efc39d','#bdaedf']});
 /* 颜料肌理：生产素材 pigment.webp，作为 Canvas pattern，只落在形体上 */
 const PIG=new Image();PIG.decoding='async';PIG.onload=()=>{S.patch=null;kick();};PIG.src='assets/textures/pigment.webp';
 /* 每帧重新采样大纹理很慢：按形体尺寸预先渲染一块肌理，之后每帧只 drawImage 一次 */
@@ -74,8 +71,8 @@ function mount(opt){
   S.sec.addEventListener('pointerleave',()=>{S.o.ptr.inside=false;kick();},sig);
   window.addEventListener('blur',()=>endHold(),sig);
   document.addEventListener('visibilitychange',()=>{if(document.hidden){endHold();stopLoop();}else start();},sig);
-  const onD=e=>{S.dark=e.matches;kick();},onR=e=>{S.rm=e.matches;stopLoop();start();};
-  mqD.addEventListener('change',onD,sig);mqR.addEventListener('change',onR,sig);
+  const onR=e=>{S.rm=e.matches;stopLoop();start();};
+  mqR.addEventListener('change',onR,sig);
   S.W=0;resize();start();
 }
 function unmount(){
@@ -209,7 +206,7 @@ function draw(now){
   c.save();c.filter=`blur(${(Rr*.04).toFixed(1)}px)`;c.fillStyle=igr;c.fill();c.restore();
   // 颜料肌理：只落在几层形体的范围内
   const patch=pigmentPatch(Rr);
-  if(patch){c.save();layerPath(c,sage,o);layerPath(c,peach,o,1,true);layerPath(c,body,o,1,true);c.clip();c.globalCompositeOperation='multiply';c.globalAlpha=S.dark?.4:.6;c.drawImage(patch,cx-Rr*1.8,cy-Rr*1.6,Rr*3.6,Rr*3.2);c.restore();}
+  if(patch){c.save();layerPath(c,sage,o);layerPath(c,peach,o,1,true);layerPath(c,body,o,1,true);c.clip();c.globalCompositeOperation='multiply';c.globalAlpha=.6;c.drawImage(patch,cx-Rr*1.8,cy-Rr*1.6,Rr*3.6,Rr*3.2);c.restore();}
   // 轨道的前半圈 + 一颗哑光的小珠子（没有白色描边和高光点）
   c.strokeStyle=P.line;c.lineWidth=1.2+.3*o.appr;ob.arc(c,0,Math.PI);
   const ba=S.rm?.5:(t*.11)%TAU,[bx,by]=ob.at(ba),front=Math.sin(ba)>0,br=o.R*(front?.08:.06);
