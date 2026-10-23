@@ -1,5 +1,5 @@
 'use strict';
-/* 缓缓 · 数据层 v3
+/* 生息 SHENGXI · 数据层 v3（沿用缓缓 v2 的存储结构，保证旧记录不丢）
    原则：
    - 原始表达（文字 / 无言）、用户自报的标签、关怀尝试与反馈、空间里的视觉形态分开保存。
    - 用户没说的就是未知（null），不补默认值，也不从动作里猜情绪。
@@ -7,17 +7,18 @@
    - 洞察只描述计数与同一次练习的反馈，写清样本量，不推断因果或疗效。
    无 DOM 依赖，可在 node 中测试。 */
 (function(root){
+/* c：小团子与图表填充；d：同色系的深色，用于表情线条与文字 */
 const EMO={
-  '焦虑':{c:'#e6b97f',d:'#9c7440'},
-  '烦躁':{c:'#e39d88',d:'#a05a46'},
-  '低落':{c:'#a6b7d8',d:'#5c6f94'},
-  '疲惫':{c:'#bfb3d4',d:'#7a6c96'},
-  '委屈':{c:'#e5adc2',d:'#9c627b'},
-  '迷茫':{c:'#a1c6c1',d:'#56837e'},
-  '平静':{c:'#b1caac',d:'#668562'},
-  '开心':{c:'#f2cc8f',d:'#a9843f'}
+  '焦虑':{c:'#efbb8f',d:'#94603a'},
+  '烦躁':{c:'#e9a99b',d:'#9a5347'},
+  '低落':{c:'#adc0db',d:'#4f6585'},
+  '疲惫':{c:'#c4b7e0',d:'#665a90'},
+  '委屈':{c:'#e8b6c6',d:'#91566d'},
+  '迷茫':{c:'#a9cac7',d:'#4a7774'},
+  '平静':{c:'#b5cfb2',d:'#4f6f52'},
+  '开心':{c:'#f3d394',d:'#8a6a28'}
 };
-const UNNAMED={c:'#d9d2e0',d:'#8a8095'};
+const UNNAMED={c:'#ddd6e5',d:'#7f7690'};
 const EMOTIONS=Object.keys(EMO);
 const COMFORT=['平静','开心'];
 const TRIG=['求职','学业','工作','社交','家庭','睡眠','身体','环境'];
@@ -25,6 +26,8 @@ const INTENSITY=['很轻','有一点','中等','挺强','很强烈'];
 const CARE_NAME={breath:'方块呼吸',meditate:'正念片刻',music:'无词和声',rain:'雨声',scan:'身体扫描',stretch:'拉伸',walk:'散步'};
 const CARE_CAT={breath:'呼吸',meditate:'呼吸',music:'聆听',rain:'聆听',scan:'身体',stretch:'身体',walk:'身体'};
 const FEEDBACK={better:'轻松了一点',same:'差不多',worse:'还不太舒服'};
+/* 练习反馈的三种状态：better/same/worse 是回答；'skip' 是用户明确点了跳过；null 是没有回答（直接关掉）。 */
+const SKIP='skip';
 const WK=['周日','周一','周二','周三','周四','周五','周六'];
 
 function rng(seed){let a=seed>>>0;return function(){a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
@@ -98,7 +101,6 @@ function genDemo(now){
       }
     });
   }
-  sessions.forEach(s=>{if(s.feedback==='skip')s.feedback=null;});
   return{entries,sessions};
 }
 
@@ -128,7 +130,7 @@ function migrateV2(old){
     if(!s)return;
     if(s.entryId&&mockIds.has(s.entryId)){report.demoSessionsDropped++;return;}
     personal.sessions.push({id:String(s.id||('s2'+Math.random().toString(36).slice(2))),ts:Number.isFinite(s.ts)?s.ts:Date.parse(s.date)||Date.now(),activity:s.activity,
-      plannedSec:null,seconds:Number.isFinite(s.seconds)?s.seconds:null,ended:null,feedback:FEEDBACK[s.feedback]?s.feedback:null,entryId:s.entryId||null,legacy:{from:'huanhuan-v2'}});
+      plannedSec:null,seconds:Number.isFinite(s.seconds)?s.seconds:null,ended:null,feedback:FEEDBACK[s.feedback]||s.feedback===SKIP?s.feedback:null,entryId:s.entryId||null,legacy:{from:'huanhuan-v2'}});
     report.personalSessions++;
   });
   return{personal,report};
@@ -149,10 +151,12 @@ function triggerStats(entries){
     return{t,i,n:es.length,by,comfort:es.filter(e=>COMFORT.includes(e.emotion)).length,nI:wi.length,avg:mean(wi.map(e=>e.intensity))};
   }).filter(x=>x.n).sort((a,b)=>b.n-a.n);
 }
+/* n：练习次数；nFb：给了 better/same/worse 回答的次数；skip：明确跳过；none：没有回答 */
 function feedbackStats(sessions,activity){
   const s=sessions.filter(x=>(!activity||x.activity===activity));
-  const withFb=s.filter(x=>x.feedback);
-  return{n:s.length,nFb:withFb.length,better:withFb.filter(x=>x.feedback==='better').length,same:withFb.filter(x=>x.feedback==='same').length,worse:withFb.filter(x=>x.feedback==='worse').length};
+  const withFb=s.filter(x=>FEEDBACK[x.feedback]);
+  const skip=s.filter(x=>x.feedback===SKIP).length;
+  return{n:s.length,nFb:withFb.length,better:withFb.filter(x=>x.feedback==='better').length,same:withFb.filter(x=>x.feedback==='same').length,worse:withFb.filter(x=>x.feedback==='worse').length,skip,none:s.length-withFb.length-skip};
 }
 /* 只有同一次记录里同时存在练习前后强度，才计算变化（当前界面不收集，留给以后） */
 function pairedChange(sessions){
@@ -162,7 +166,7 @@ function pairedChange(sessions){
 function insights(entries,sessions,opts={}){
   const out=[],demo=!!opts.demo,n=entries.length;
   if(n<5)return out;
-  const caveat=demo?'示例数据中的计数，只用来展示分析方式，不说明因果。':'只是计数，不说明因果；记录越多越有参考价值。';
+  const caveat=demo?'示例数据':'';
   // 1 最常一起出现的触发
   const ts=triggerStats(entries);
   if(ts[0]&&ts[0].n>=3){
@@ -178,15 +182,15 @@ function insights(entries,sessions,opts={}){
   const comfy=entries.filter(e=>COMFORT.includes(e.emotion));
   if(comfy.length>=3){
     const c={};comfy.forEach(e=>(e.triggers||[]).forEach(t=>c[t]=(c[t]||0)+1));const top=Object.entries(c).sort((a,b)=>b[1]-a[1])[0];
-    if(top&&top[1]>=2)out.push({key:'comfort',eyebrow:'舒服的时刻',big:top[0],text:`选了平静或开心的 ${comfy.length} 条记录里，有 ${top[1]} 条和「${top[0]}」有关。`,caveat:'好的时刻也值得被看见。'});
+    if(top&&top[1]>=2)out.push({key:'comfort',eyebrow:'平静与开心',big:top[0],text:`选了平静或开心的 ${comfy.length} 条记录里，有 ${top[1]} 条和「${top[0]}」有关。`,caveat});
   }
   // 4 练习后的反馈：同一次练习的自评，不是情绪变化
-  const acts={};sessions.filter(s=>s.feedback).forEach(s=>{(acts[s.activity]=acts[s.activity]||[]).push(s);});
+  const acts={};sessions.filter(s=>FEEDBACK[s.feedback]).forEach(s=>{(acts[s.activity]=acts[s.activity]||[]).push(s);});
   const topAct=Object.entries(acts).sort((a,b)=>b[1].length-a[1].length)[0];
   if(topAct&&topAct[1].length>=3){
     const f=feedbackStats(sessions,topAct[0]);
-    out.push({key:'practice',eyebrow:'练习之后你怎么说',big:CARE_NAME[topAct[0]]||topAct[0],text:`你在 ${f.nFb} 次「${CARE_NAME[topAct[0]]||topAct[0]}」后留下了感受：${f.better} 次轻松了一点，${f.same} 次差不多，${f.worse} 次还不太舒服。`,
-      bars:[{label:FEEDBACK.better,v:f.better/f.nFb,n:f.better},{label:FEEDBACK.same,v:f.same/f.nFb,n:f.same},{label:FEEDBACK.worse,v:f.worse/f.nFb,n:f.worse}],caveat:'这是练习结束时的自评，不代表情绪被改善或解决。'});
+    out.push({key:'practice',eyebrow:'练习反馈',big:CARE_NAME[topAct[0]]||topAct[0],text:`你在 ${f.nFb} 次「${CARE_NAME[topAct[0]]||topAct[0]}」后留下了感受：${f.better} 次轻松了一点，${f.same} 次差不多，${f.worse} 次还不太舒服。${f.skip?`另有 ${f.skip} 次选了跳过。`:''}`,
+      bars:[{label:FEEDBACK.better,v:f.better/f.nFb,n:f.better},{label:FEEDBACK.same,v:f.same/f.nFb,n:f.same},{label:FEEDBACK.worse,v:f.worse/f.nFb,n:f.worse}],caveat});
   }
   // 5 示例专属：模拟睡眠 × 自报焦虑（明确标为模拟）
   if(demo){
@@ -194,9 +198,9 @@ function insights(entries,sessions,opts={}){
     const low=withSleep.filter(e=>e.ctx.sleepHours<6),ok=withSleep.filter(e=>e.ctx.sleepHours>=6);
     if(low.length>=3&&ok.length>=3){
       const a=low.filter(e=>e.emotion==='焦虑').length,b=ok.filter(e=>e.emotion==='焦虑').length;
-      out.push({key:'sleep',eyebrow:'模拟睡眠 × 自报焦虑',big:`${a}/${low.length}`,simulated:true,
+      out.push({key:'sleep',eyebrow:'模拟睡眠 × 自报焦虑',big:`${a} / ${low.length} 条`,simulated:true,
         text:`在模拟睡眠不足 6 小时的 ${low.length} 条记录里，有 ${a} 条选了焦虑；其余 ${ok.length} 条里有 ${b} 条。`,
-        bars:[{label:'睡眠 < 6h',v:a/low.length,n:a},{label:'睡眠 ≥ 6h',v:b/ok.length,n:b}],caveat:'睡眠数据是模拟的，这个关联是示例里刻意设计的，不代表真实规律。'});
+        bars:[{label:'睡眠 < 6h',v:a/low.length,n:a},{label:'睡眠 ≥ 6h',v:b/ok.length,n:b}],caveat:'模拟睡眠数据；关联为示例设定。'});
     }
   }
   return out.slice(0,demo?5:4);
@@ -204,32 +208,25 @@ function insights(entries,sessions,opts={}){
 
 /* ---------- 关怀推荐：只用用户自报的情绪与同一练习的反馈；不用传感器 ---------- */
 const BASE={'焦虑':['breath','scan','music'],'烦躁':['walk','breath','rain'],'低落':['walk','music','rain'],'疲惫':['music','stretch','scan'],'委屈':['music','breath','walk'],'迷茫':['walk','meditate','breath'],'平静':['meditate','walk','music'],'开心':['walk','music','meditate']};
-const WHY={breath:'放慢呼吸，是很多人用来让身体慢下来的方式。',meditate:'不需要改变什么，只是留意当下。',music:'什么都不用做，听一会儿就好。',rain:'把注意力交给一段连续的声音。',scan:'从头到脚感受一遍身体，适合不想动的时候。',stretch:'把积在肩颈的紧绷松开一点。',walk:'换个环境，让身体带着情绪走一走。'};
 function recommend(emotion,sessions){
   const ids=(BASE[emotion]||['breath','music','walk']).slice();
   return ids.map((id,i)=>{
     const f=feedbackStats(sessions,id);
-    let reason=emotion?`你选了「${emotion}」。${WHY[id]}`:WHY[id];
-    if(f.nFb>=2)reason=`你在 ${f.nFb} 次${CARE_NAME[id]}后留下了感受，其中 ${f.better} 次说轻松了一点。`;
+    let reason=emotion?`你最近选了「${emotion}」`:'';
+    if(f.nFb>=2)reason=`做过 ${f.nFb} 次，${f.better} 次反馈「轻松了一点」`;
     return{id,cat:CARE_CAT[id],reason,score:(3-i)+(f.nFb>=2?(f.better-f.worse)/f.nFb:0)};
   }).sort((a,b)=>b.score-a.score);
 }
 
-/* ---------- 文字的回应：少量透明关键词规则；不理解全文，不补写事实 ---------- */
+/* ---------- 文字的回应：不做关键词情绪解读；只保留安全提示 ---------- */
 const REPLY_RULES=[
-  [/(想死|不想活|自杀|轻生|结束生命|伤害自己)/,'谢谢你写下来。如果你此刻有伤害自己的念头，请先联系身边的人，或看看「需要帮助时」里的电话。','help'],
-  [/(开心|高兴|好消息|太好了|喜欢|幸福|顺利)/,'这一点好，也留在这里。'],
-  [/(烦|气死|生气|火大|恼)/,'烦的感觉，可以先放在这里。'],
-  [/(累|疲|困|撑不住|好乏)/,'累的时候，不用再多说什么。'],
-  [/(难过|伤心|哭|低落|失落|委屈)/,'难过也可以在这里待着。'],
-  [/(担心|焦虑|紧张|害怕|怕|不安)/,'担心的事，先放在这里，不用现在想完。'],
-  [/(不知道|迷茫|乱|说不清)/,'说不清也没关系。']
+  [/(想死|不想活|自杀|轻生|结束生命|伤害自己)/,'如果有伤害自己的念头，请联系身边的人，或查看「需要帮助」中的电话。','help']
 ];
 function textReply(text){
   const t=String(text||'');
   for(const [re,line,flag] of REPLY_RULES)if(re.test(t))return{line,flag:flag||null};
-  return{line:'这段话可以先留在这里。',flag:null};
+  return{line:'',flag:null};
 }
 
-root.HH={EMO,UNNAMED,EMOTIONS,COMFORT,TRIG,INTENSITY,CARE_NAME,CARE_CAT,FEEDBACK,WK,rng,hash,mean,sod,addDays,fmt1,named,hasIntensity,makeForm,blankEntry,genDemo,migrateV2,inRange,emotionStats,triggerStats,feedbackStats,pairedChange,insights,recommend,textReply};
+root.HH={EMO,UNNAMED,EMOTIONS,COMFORT,TRIG,INTENSITY,CARE_NAME,CARE_CAT,FEEDBACK,SKIP,WK,partOfDay,rng,hash,mean,sod,addDays,fmt1,named,hasIntensity,makeForm,blankEntry,genDemo,migrateV2,inRange,emotionStats,triggerStats,feedbackStats,pairedChange,insights,recommend,textReply};
 })(typeof window!=='undefined'?window:globalThis);
