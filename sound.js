@@ -1,6 +1,6 @@
 'use strict';
 /* 缓缓 · 生成式环境音（Web Audio）。只在用户点击后启动，不加载任何音频文件。
-   同一时间只有一个声音来源（owner）：首页空间 'space'，或某个练习。
+   同一时间只有一个声音来源（owner）：全局环境音 'space'，或某个练习。
    setTexture() 让连续的动作轻微改变已有音景的亮度与层次，不触发新音符，也不提高总音量。 */
 (function(root){
 const PRESETS={
@@ -11,7 +11,7 @@ const PRESETS={
 const CHORD=9;
 let ac=null,master=null,bus=null,nf=null,shimmer=null,live=[],timer=null,idx=0,P=null,vol=.5,owner=null;
 const listeners=new Set();
-const emit=()=>listeners.forEach(fn=>{try{fn({playing:!!ac,owner});}catch(e){}});
+const emit=()=>listeners.forEach(fn=>{try{fn({playing:!!ac&&ac.state==='running',owner});}catch(e){}});
 const mtof=m=>440*Math.pow(2,(m-69)/12);
 
 function impulse(sec){
@@ -53,6 +53,7 @@ function play(preset,opts={}){
     P=PRESETS[preset]||PRESETS.music;idx=0;owner=opts.owner||preset;
     if(typeof opts.volume==='number')vol=opts.volume;
     ac=new AC();
+    const context=ac;context.onstatechange=()=>{if(ac===context)emit();};
     master=ac.createGain();master.gain.value=0;master.connect(ac.destination);
     master.gain.setValueAtTime(0,ac.currentTime);master.gain.linearRampToValueAtTime(vol,ac.currentTime+(opts.fadeIn||2.5));
     const comp=ac.createDynamicsCompressor();comp.connect(master);
@@ -89,12 +90,12 @@ function stop(now){
   if(!ac){owner=null;return;}
   const a=ac,m=master;ac=null;master=null;bus=null;nf=null;shimmer=null;live=[];owner=null;
   try{
-    if(now){a.close().catch(()=>{});}
+    if(now){m.gain.cancelScheduledValues(a.currentTime);m.gain.setValueAtTime(0,a.currentTime);m.disconnect();a.close().catch(()=>{});}
     else{m.gain.cancelScheduledValues(a.currentTime);m.gain.setValueAtTime(m.gain.value,a.currentTime);m.gain.linearRampToValueAtTime(0,a.currentTime+.8);setTimeout(()=>a.close().catch(()=>{}),900);}
   }catch(e){}
   emit();
 }
-function stopIf(who){if(owner===who)stop();}
+function stopIf(who,now=false){if(owner===who)stop(now);}
 function setVolume(v){vol=v;if(ac&&master)master.gain.setTargetAtTime(v,ac.currentTime,.15);}
-root.Ambient={play,stop,stopIf,setVolume,setTexture,onChange:fn=>{listeners.add(fn);return()=>listeners.delete(fn);},get playing(){return !!ac;},get owner(){return owner;},get volume(){return vol;},get state(){return ac?ac.state:'closed';}};
+root.Ambient={play,stop,stopIf,setVolume,setTexture,onChange:fn=>{listeners.add(fn);return()=>listeners.delete(fn);},get playing(){return !!ac&&ac.state==='running';},get owner(){return owner;},get volume(){return vol;},get state(){return ac?ac.state:'closed';}};
 })(window);

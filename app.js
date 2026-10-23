@@ -46,7 +46,7 @@ const entryById=id=>entries().find(x=>x.id===id);
 const VIEWS=['now','reflect','care'],ALIAS={home:'now',journal:'reflect'},TITLE={now:'此刻',reflect:'回望',care:'关怀'};
 const routeOf=h=>{h=ALIAS[h]||h;return VIEWS.includes(h)?h:'now';};
 let view=routeOf(location.hash.slice(1));
-let sayDraft='',composer={state:'write',id:null},period=7,listFilter='all',search='',spaceVol=.3;
+let sayDraft='',composer={state:'write',id:null},period=7,listFilter='all',search='';
 
 /* ---------- 小工具 ---------- */
 function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');clearTimeout(window.toastTimeout);window.toastTimeout=setTimeout(()=>t.classList.remove('show'),3800);}
@@ -92,7 +92,6 @@ function now(){
       </div>
     </div>
   </div>
-  <div class="now-foot">${soundControl()}</div>
   </section>
   <section class="now-recent" id="now-recent">${recentStrip()}</section>`;
 }
@@ -131,10 +130,7 @@ function tagPanel(e){
     <div class="more-panel inten-row" id="more-inten" hidden role="group" aria-label="强度">${[1,2,3,4,5].map(i=>`<button type="button" class="inten ${inten&&i<=inten?'on':''}" data-action="tag-inten" data-value="${i}" aria-pressed="${inten===i}" aria-label="强度 ${i}：${INTENSITY[i-1]}"><i style="--s:${8+i*3}px"></i><span>${INTENSITY[i-1]}</span></button>`).join('')}</div>
   </div>`;
 }
-function soundControl(){
-  const on=Ambient.owner==='space';
-  return `<span class="sound-ctl"><button class="sound-toggle" data-action="sound" id="sound-toggle" aria-pressed="${on}">${icon(on?'sound':'mute')}<span>${on?'声音 · 开':'声音 · 关'}</span></button><input type="range" id="space-volume" min="0" max="60" value="${Math.round(spaceVol*100)}" aria-label="环境声音量" ${on?'':'hidden'}><span class="sound-msg" id="sound-msg" role="status"></span></span>`;
-}
+
 /* 时间的口语说法：用于形体旁的记忆小卡 */
 function ago(ts){const d=Math.round((HH.sod(Date.now())-HH.sod(ts))/864e5);return d<=0?'今天':d===1?'昨天':d<7?`${d} 天前`:d<14?'上周':d<31?`${Math.round(d/7)} 周前`:dateLabel(ts);}
 function snippet(e,n=11){if(e.kind==='wordless')return named(e)?`无言的一刻 · ${e.emotion}`:'无言的一刻';const t=(e.text||'').replace(/\s+/g,' ');return t.length>n?t.slice(0,n)+'…':t;}
@@ -217,19 +213,37 @@ function keepStay(){
 function leaveStay(){Space.takeHoldTotal();$('#orb-choices').hidden=true;$('#orb-hint').textContent='未保存';$('#orb-sub').textContent='';clearTimeout(window.hintT);window.hintT=setTimeout(resetHint,4500);}
 function resetHint(){const h=$('#orb-hint');if(h&&!Space.holding&&$('#orb-choices').hidden){h.textContent='';$('#orb-sub').textContent='按住，慢慢移动';}}
 
-/* ---------- 声音：默认静音；被拒绝时说明并保持无声 ---------- */
+/* ---------- 全局环境音：仅由点击开启，声音练习期间暂让播放权 ---------- */
+let ambientEnabled=false,ambientBusy=false,soundRequest=0;
+const practiceHasSound=()=>!!(activeActivity&&activeActivity.soundClaimed);
 function syncSound(){
-  const b=$('#sound-toggle');if(!b)return;const on=Ambient.owner==='space';
-  b.setAttribute('aria-pressed',on);b.innerHTML=`${icon(on?'sound':'mute')}<span>${on?'声音 · 开':'声音 · 关'}</span>`;
-  $('#space-volume').hidden=!on;
+  const playing=Ambient.owner==='space'&&Ambient.playing;
+  const paused=ambientEnabled&&!playing&&!ambientBusy;
+  const label=ambientEnabled?(paused?'关闭环境音（当前已暂停）':'关闭环境音'):'开启环境音';
+  $$('[data-action="sound"]').forEach(b=>{
+    b.setAttribute('aria-pressed',String(ambientEnabled));b.setAttribute('aria-label',label);b.title=label;
+    b.setAttribute('aria-busy',String(ambientBusy));b.dataset.state=playing?'playing':paused?'paused':'off';
+    b.innerHTML=icon(playing?'sound':'mute');
+  });
+  const status=ambientBusy?'环境音正在开启':playing?'环境音已开启':paused?(practiceHasSound()?'环境音已暂停，练习结束后恢复':'环境音播放已暂停'):'环境音已关闭';
+  $('#sound-status').textContent=status;
+  const note=$('#practice-ambient-status');if(note)note.textContent=paused&&practiceHasSound()?'环境音已暂停，练习结束后恢复':ambientEnabled?'环境音已开启':'环境音已关闭';
 }
 Ambient.onChange(syncSound);
+function startAmbient(){
+  if(!ambientEnabled||practiceHasSound()||Ambient.owner==='space'){syncSound();return;}
+  const request=++soundRequest;ambientBusy=true;syncSound();
+  Ambient.play('space',{owner:'space',volume:.3,fadeIn:3})
+    .catch(()=>{if(request===soundRequest){ambientEnabled=false;toast('浏览器未允许播放声音，请点击声音按钮重试');}})
+    .finally(()=>{if(request===soundRequest){ambientBusy=false;syncSound();}});
+}
 function toggleSound(){
-  if(Ambient.owner==='space'){Ambient.stop();return;}
-  const b=$('#sound-toggle'),msg=$('#sound-msg');b.disabled=true;msg.textContent='';
-  Ambient.play('space',{owner:'space',volume:spaceVol,fadeIn:3}).then(()=>{msg.textContent='';})
-    .catch(()=>{msg.textContent='浏览器未允许播放声音';})
-    .finally(()=>{b.disabled=false;syncSound();});
+  if(ambientEnabled){ambientEnabled=false;ambientBusy=false;soundRequest++;if(Ambient.owner==='space')Ambient.stop(true);syncSound();}
+  else{ambientEnabled=true;startAmbient();}
+}
+function releasePracticeSound(a){
+  if(!a||!a.soundClaimed)return;
+  a.soundClaimed=false;startAmbient();
 }
 
 /* =========================================================
@@ -532,7 +546,7 @@ function care(){
 /* ---------- 练习播放：随时开始、暂停、结束；只记录真实时长 ---------- */
 let activeActivity=null,timer=null,running=false,started=false,tickAt=0,accumulated=0,volume=.5;
 function practiceOwner(){return activeActivity?'practice-'+activeActivity.id:null;}
-function stopTimer(){clearInterval(timer);timer=null;if(running&&activeActivity)accumulated+=(Date.now()-tickAt)/1000;running=false;if(practiceOwner())Ambient.stopIf(practiceOwner());}
+function stopTimer(){clearInterval(timer);timer=null;if(running&&activeActivity)accumulated+=(Date.now()-tickAt)/1000;running=false;if(practiceOwner())Ambient.stopIf(practiceOwner(),true);}
 function elapsedSec(){return accumulated+(running?(Date.now()-tickAt)/1000:0);}
 function recordSession(){
   const a=activeActivity;if(!a||!started||a.sessionId)return null;
@@ -540,7 +554,7 @@ function recordSession(){
   const s={id:'s'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),ts:Date.now(),activity:a.id,plannedSec:a.minutes*60,seconds:secs,ended:secs>=a.minutes*60?'complete':'early',feedback:null,entryId:a.entryId||null};
   if(isDemo())s.demo=true;sessions().push(s);persist();a.sessionId=s.id;return s;
 }
-function endActivity(){if(activeActivity){stopTimer();recordSession();activeActivity=null;if(view==='care')render();else if(view==='now')refreshHome();}}
+function endActivity(){if(activeActivity){const a=activeActivity;stopTimer();recordSession();activeActivity=null;releasePracticeSound(a);if(view==='care')render();else if(view==='now')refreshHome();}}
 function openActivity(id,opts={}){
   endActivity();const a=actById(id);if(!a)return;
   activeActivity={...a,entryId:opts.entry||null,sessionId:null};accumulated=0;started=false;running=false;playerScreen();
@@ -551,6 +565,7 @@ function playerScreen(){
   modal(`<div class="player tint-${a.tint}">
   ${e?`<div class="caring-for">${named(e)?bubble(e.emotion,'bubble tiny'):traceSVG(e,{grain:false,cls:'trace-svg tiny'})}<span>${esc(firstLine(e))}</span></div>`:''}
   <div class="player-head"><h2>${a.title}</h2><p>${a.intro}</p></div>
+  ${a.kind==='sound'?`<div class="practice-ambient"><button class="round-button ambient-toggle" data-action="sound" aria-label="开启环境音" aria-pressed="false">${icon('mute')}</button><span id="practice-ambient-status" role="status"></span></div>`:''}
   <div class="player-stage">${a.kind==='breath'?`<div class="segmented center-seg" role="group" aria-label="时长">${a.choices.map(m=>`<button data-action="dur" data-value="${m}" class="${a.minutes===m?'active':''}" aria-pressed="${a.minutes===m}">${m} 分钟</button>`).join('')}</div>
     <div class="breath-orb" id="breath-orb" aria-hidden="true"><i class="bo-sage"></i><i class="bo-peach"></i><i class="bo-body"></i><i class="bo-inner"></i></div><p class="breath-phase" id="breath-phase" aria-live="polite"></p>`
   :a.kind==='sound'?`<div class="sound-viz" id="sound-viz" aria-hidden="true">${Array.from({length:21},(_,i)=>`<i style="--h:${(30+Math.abs(Math.sin(i*1.7))*60).toFixed(0)}%;--d:${(i%7)*.13}s"></i>`).join('')}</div><div class="volume-row"><label for="volume">音量</label><input type="range" min="0" max="100" value="${Math.round(volume*100)}" id="volume"></div>`
@@ -569,19 +584,19 @@ function updateTimer(){
     const sc=ph===0?.74+w/4*.32:ph===1?1.06:ph===2?1.06-w/4*.32:.74;$('#breath-orb').style.setProperty('--sc',reduceMotion()?1:sc.toFixed(3));$('#breath-orb').dataset.phase=ph;
   }
   if($('#step-list')){const n=a.steps.length,c=Math.min(n-1,Math.floor(el/total*n));$$('#step-list > li').forEach((d,i)=>{d.classList.toggle('current',i===c);d.classList.toggle('done',i<c);});}
-  if(rem<=0){stopTimer();accumulated=total;const t=$('#toggle-timer');t.disabled=true;t.textContent='时间到';$('#timer-copy').textContent='';const v=$('#sound-viz');v&&v.classList.remove('playing');}
+  if(rem<=0){stopTimer();releasePracticeSound(a);accumulated=total;const t=$('#toggle-timer');t.disabled=true;t.textContent='时间到';$('#timer-copy').textContent='';const v=$('#sound-viz');v&&v.classList.remove('playing');}
 }
 function toggleTimer(){
   const a=activeActivity;if(!a)return;const btn=$('#toggle-timer');
   if(running){stopTimer();btn.innerHTML=`${icon('play')}继续`;if($('#breath-phase'))$('#breath-phase').textContent='已暂停';const v=$('#sound-viz');v&&v.classList.remove('playing');return;}
   started=true;running=true;tickAt=Date.now();btn.innerHTML=`${icon('pause')}暂停`;$$('[data-action="dur"]').forEach(b=>b.disabled=true);
-  if(a.kind==='sound'){Ambient.play(a.id,{owner:practiceOwner(),volume}).then(()=>{const v=$('#sound-viz');v&&v.classList.add('playing');}).catch(()=>{const c=$('#timer-copy');if(c)c.textContent='浏览器未允许播放声音';});}
+  if(a.kind==='sound'){a.soundClaimed=true;soundRequest++;ambientBusy=false;Ambient.play(a.id,{owner:practiceOwner(),volume}).then(()=>{if(activeActivity===a&&running){const v=$('#sound-viz');v&&v.classList.add('playing');}}).catch(()=>{if(activeActivity===a&&running&&a.soundClaimed){const c=$('#timer-copy');if(c)c.textContent='浏览器未允许播放声音';}});syncSound();}
   timer=setInterval(updateTimer,200);updateTimer();
 }
 function finishActivity(){
   const a=activeActivity;if(!a)return;
   if(!started){closeModal();return;}
-  stopTimer();const s=recordSession(),secs=s?s.seconds:0;
+  stopTimer();releasePracticeSound(a);const s=recordSession(),secs=s?s.seconds:0;
   modal(`<div class="feedback-screen"><div class="fb-art">${careImg(activeActivity?activeActivity.id:'breath','care-img',false)}</div><h2>练习结束</h2><p>感觉怎么样？</p>
   <div class="feedback-buttons"><button data-action="feedback" data-value="better">轻松了一点</button><button data-action="feedback" data-value="same">差不多</button><button data-action="feedback" data-value="worse">还不太舒服</button></div>
   <button class="ghost-button" data-action="feedback" data-value="skip">跳过</button></div>`,'feedback');
@@ -599,7 +614,7 @@ function modal(html,kind=''){
   const m=$('#modal');if(!m.open)modalReturn=document.activeElement;
   m.className=kind?'m-'+kind:'';
   $('#modal-content').innerHTML=`<div class="modal-body"><button class="icon-button modal-close" data-action="close" aria-label="关闭">${icon('close')}</button>${html}</div>`;
-  if(!m.open)m.showModal();m.scrollTop=0;const first=m.querySelector('.modal-body h2');if(first){first.tabIndex=-1;}
+  if(!m.open)m.showModal();m.scrollTop=0;syncSound();const first=m.querySelector('.modal-body h2');if(first){first.tabIndex=-1;}
 }
 function closeModal(){endActivity();if($('#modal').open)$('#modal').close();}
 $('#modal').addEventListener('close',()=>{
@@ -616,26 +631,34 @@ function settings(){
   <div class="setting-row"><div><h3>我的记录</h3><p>${p.entries.length} 段记录 · ${p.sessions.length} 次练习（不含示例）</p></div><button class="secondary-button" data-action="export">导出 JSON</button></div>
   <div class="setting-row"><div><h3>示例数据</h3><p>虚构的记录与模拟情境数据，与你的记录分开保存。</p></div><span class="row-btns">${isDemo()?'<button class="ghost-button" data-action="demo-reset">重置</button><button class="secondary-button" data-action="demo-exit">退出示例</button>':'<button class="secondary-button" data-action="demo-enter">查看示例数据</button>'}</span></div>
   ${hasBackup||mig?`<div class="setting-row"><div><h3>旧版本数据</h3><p>${mig&&mig.report?`已从旧版本迁移 ${mig.report.personalEntries} 条记录、${mig.report.personalSessions} 次练习；旧版的示例记录没有迁移。`:mig&&mig.error?esc(mig.error):''}${hasBackup?' 原始数据已原样备份在这个浏览器里。':''}</p></div>${hasBackup?'<button class="secondary-button" data-action="export-backup">下载备份</button>':''}</div>`:''}
-  <div class="setting-row"><div><h3>设计说明</h3><p>数据处理与计算方式。</p></div><button class="secondary-button" data-action="notes-open">打开</button></div>
+  <div class="setting-row"><div><h3>关于生息</h3><p>设计手记、探索过程与原型说明。</p></div><button class="secondary-button" data-action="notes-open">打开</button></div>
   <div class="setting-row"><div><h3>删除全部记录</h3><p>删除你的记录与练习，无法恢复。示例数据不受影响。</p></div><button class="danger-button" data-action="clear-confirm">删除</button></div>`);
 }
 function privacy(){modal(`<h2>隐私</h2><p>生息无需注册。文字、标签与练习记录只保存在当前浏览器的本地存储中，不上传到服务器，也不发送给任何 AI 模型。点击「留在这里」或「留下这一刻」后才会保存。</p><ul class="modal-list"><li>共用设备上，使用同一浏览器的人可能看到记录。</li><li>可以在「数据与设置」中导出或删除全部记录。</li><li>清除浏览器数据后，记录也会被清除。</li></ul><div class="modal-actions"><button class="primary-button" data-action="close">知道了</button></div>`);}
-function about(){modal(`<div class="eyebrow">ABOUT SHENGXI</div><h2>A living space for whatever you feel.</h2><p>情绪日记与自我关怀的网页原型。在「此刻」写下文字或与形体互动并选择留下；在「回望」查看记录；在「关怀」做短练习。</p><ul class="modal-list"><li>没有接入大模型。</li><li>练习排序依据你选的感受和同一练习的反馈。</li><li>没有接入真实设备或传感器；示例中的手表与情境数据为模拟数据。</li><li>不提供诊断或治疗。</li></ul><div class="modal-actions"><button class="secondary-button" data-action="notes-open">设计说明</button><button class="primary-button" data-action="close">好</button></div>`);}
+function about(){notesReturn=document.activeElement;closeModal();setNotes(true);}
+
 function exportJSON(obj,name){const blob=new Blob([JSON.stringify(obj,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);}
 
-/* ---------- 设计说明：次级入口，默认收起，关闭后焦点回到入口 ---------- */
+/* ---------- 关于生息：沿用次级入口，原生对话框负责焦点与键盘范围 ---------- */
 let notesReturn=null;
 function setNotes(open,restore=true){
-  document.body.classList.toggle('notes-open',open);const p=$('#design-notes');p.setAttribute('aria-hidden',!open);p.inert=!open;
-  $$('.dn-sec[data-for]').forEach(s=>s.classList.toggle('current',s.dataset.for.split(' ').includes(view)));
-  if(open){notesReturn=notesReturn||document.activeElement;setTimeout(()=>p.querySelector('.dn-close').focus(),50);}
-  else{const r=notesReturn||$('[data-action="settings"]');notesReturn=null;if(restore&&r&&document.contains(r))r.focus({preventScroll:true});}
+  const p=$('#design-notes');
+  if(open){
+    if(p.open)return;
+    notesReturn=notesReturn||document.activeElement;document.body.classList.add('notes-open');
+    p.showModal();p.scrollTop=0;p.querySelector('.dn-close').focus();
+  }else{
+    if(!restore)notesReturn=null;
+    if(p.open)p.close();
+  }
 }
-setNotes(false,false);
+$('#design-notes').addEventListener('close',()=>{
+  document.body.classList.remove('notes-open');const r=notesReturn;notesReturn=null;
+  if(r&&document.contains(r))r.focus({preventScroll:true});
+});
 
 /* ---------- 渲染与导航 ---------- */
 function render(){
-  if(view!=='now')Ambient.stopIf('space');
   Space.unmount();if(stageRO){stageRO.disconnect();stageRO=null;}document.body.classList.remove('orb-held');
   const m=$('#main');m.innerHTML=view==='now'?now():view==='reflect'?reflect():care();
   m.classList.remove('animate-in');void m.offsetWidth;m.classList.add('animate-in');
@@ -644,6 +667,7 @@ function render(){
   hydrate(m);
   if(view==='now'){mountSpace();const ta=$('#say');if(ta&&sayDraft)autoGrow(ta);}
   if(view==='reflect')mountReflect();
+  syncSound();
   if(document.body.classList.contains('notes-open'))setNotes(true,false);
 }
 function navigate(v,focusMain=true){
@@ -658,7 +682,6 @@ document.addEventListener('input',e=>{
   if(id==='say')updateSayUI();
   if(id==='journal-search'){search=e.target.value;$('#entry-list').innerHTML=entryList();}
   if(id==='volume'){volume=+e.target.value/100;if(Ambient.owner===practiceOwner())Ambient.setVolume(volume);}
-  if(id==='space-volume'){spaceVol=+e.target.value/100;if(Ambient.owner==='space')Ambient.setVolume(spaceVol);}
 });
 document.addEventListener('keydown',e=>{
   // 多行输入：Enter 换行；Ctrl/⌘ + Enter 且不在输入法组字中才保存

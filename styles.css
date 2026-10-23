@@ -290,17 +290,9 @@ body.orb-held{user-select:none;-webkit-user-select:none}
 @keyframes pill-in{from{opacity:0;transform:scale(.7)}}
 @keyframes just-left{0%{transform:scale(.3);opacity:0}35%{transform:scale(1.18);opacity:1}100%{transform:scale(1)}}
 @keyframes glow-out{0%{opacity:0;transform:scale(.4)}30%{opacity:1}100%{opacity:0;transform:scale(1.1)}}
-.now-foot{position:relative;z-index:2;display:flex;justify-content:space-between;align-items:flex-end;gap:12px;width:100%;max-width:1280px;margin:12px auto 0;padding:0 0 20px}
 .whisper{display:none!important}
 .whisper::after{content:"";display:block;width:28px;height:1px;background:var(--line-2);margin-top:10px}
 @media (min-width:960px){.whisper{display:block;padding-left:2vw}}
-.sound-ctl{display:inline-flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end;margin-left:auto}
-.sound-toggle{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:5px 12px 5px 10px;border-radius:6px;border:0;background:transparent;font-size:13px;color:var(--ink-2);font-weight:500}
-.sound-toggle .icon{width:17px;height:17px}
-.sound-toggle[aria-pressed="true"]{background:var(--lilac-soft);border-color:var(--lilac);color:var(--lilac-ink)}
-#space-volume{width:90px}
-.sound-msg{font-size:12px;color:var(--ink-3);max-width:220px}
-.sound-msg:empty{display:none}
 /* 首屏之下：最近的痕迹（有记录时才出现） */
 .now-recent{max-width:1280px!important;padding:12px 0 24px}
 .now-recent:empty{display:none}
@@ -654,18 +646,6 @@ dialog[open]{animation:sheet .35s cubic-bezier(.2,.8,.2,1)}
 .feedback-buttons button[data-value="better"]:hover{background:var(--sage-soft);border-color:var(--sage)}
 .feedback-buttons button[data-value="worse"]:hover{background:var(--peach-soft);border-color:var(--peach)}
 
-/* ---------- 设计说明抽屉 ---------- */
-.design-notes{position:fixed;top:0;right:0;bottom:0;z-index:80;width:min(400px,100vw);background:var(--surface-solid);border-left:1px solid var(--line);box-shadow:-30px 0 60px -30px rgba(40,30,70,.3);padding:22px 22px 40px;overflow:auto;transform:translateX(102%);transition:transform .35s cubic-bezier(.2,.8,.2,1);visibility:hidden}
-body.notes-open .design-notes{transform:none;visibility:visible}
-.dn-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px}
-.dn-head h2{font-family:var(--serif);font-size:22px;margin-top:4px}
-.dn-lede{font-size:14px;color:var(--ink-2);margin-bottom:12px}
-.dn-sec{padding:14px 0;border-top:1px solid var(--line);font-size:13.5px;color:var(--ink-2)}
-.dn-sec h3{font-size:14.5px;color:var(--ink);margin-bottom:6px}
-.dn-sec ul,.dn-sec ol{padding-left:18px;display:grid;gap:5px}
-.dn-sec.current h3::after{content:"当前页面";margin-left:8px;font-size:11px;font-weight:500;color:var(--lilac-ink);background:var(--lilac-soft);padding:1px 8px;border-radius:999px}
-.dn-box{background:var(--surface-2);border:1px solid var(--line);border-radius:16px;padding:14px 16px;margin:8px 0}
-
 /* ---------- Toast ---------- */
 #toast{position:fixed;left:50%;bottom:calc(var(--tab) + 18px + env(safe-area-inset-bottom));translate:-50% 20px;z-index:120;max-width:calc(100vw - 32px);padding:11px 18px;border-radius:999px;background:var(--ink);color:var(--bg);font-size:14px;opacity:0;pointer-events:none;transition:opacity .25s,translate .25s;box-shadow:0 14px 30px -16px rgba(30,24,50,.6)}
 #toast.show{opacity:1;translate:-50% 0}
@@ -786,3 +766,53 @@ body.notes-open .design-notes{transform:none;visibility:visible}
 body[data-view="now"] .ambient::before,body[data-view="care"] .ambient::before{content:"";position:absolute;inset:9vh 0 auto;height:62vh;background:url("assets/ambient/distant-ridge.svg") center/100% 100% no-repeat;mask-image:linear-gradient(90deg,transparent,#000 12%,#000 82%,transparent);opacity:.4}
 body[data-view="care"] .ambient::before{top:10vh;transform:scaleX(-1);opacity:.4}
 @media (max-width:639px){body[data-view="now"] .ambient::before,body[data-view="care"] .ambient::before{top:13vh;height:48vh;left:-25%;right:-25%;opacity:.22}}
+
+/* Global ambient control; practice dialogs mirror the same preference. */
+.ambient-toggle{width:44px;height:44px;flex:none}
+.ambient-toggle[data-state="playing"]{color:var(--accent)}
+.practice-ambient{display:flex;align-items:center;justify-content:center;gap:8px;margin:12px 0;color:var(--ink-3);font-size:12px}
+@media (max-width:639px){
+  .header-tools{gap:0}
+  .header-tools .round-button,.header-tools .help-link{width:44px;height:44px;min-height:44px;flex:none;padding:0}
+}
+@media (max-width:359px){.site-header{padding-inline:16px;gap:8px}.site-header .brand-name small{display:none}}
+
+/* About: a readable project journal in the existing secondary panel. */
+.design-notes{position:fixed;inset:0 0 0 auto;margin:0 0 0 auto;width:min(960px,100vw);max-width:100vw;height:100dvh;max-height:100dvh;padding:0;border:0;border-left:1px solid var(--line);border-radius:0;background:var(--surface-solid);color:var(--ink);overflow:auto;overscroll-behavior:contain;scroll-padding-top:132px;box-shadow:-24px 0 48px -32px rgba(40,30,70,.25)}
+.design-notes[open]{animation:none}
+body.notes-open{overflow:hidden}
+.dn-head{position:sticky;top:0;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:20px;padding:24px 48px 20px;background:var(--surface-solid);border-bottom:1px solid var(--line)}
+.dn-head h2{font-family:var(--serif);font-weight:500;font-size:32px;line-height:1.4;margin:4px 0 0}
+.dn-close{flex:none;width:44px;height:44px}
+.about-kicker,.about-section-label{color:var(--ink-3);font-size:12px;letter-spacing:.04em}
+.about-body{padding:32px 48px 64px}
+.about-section{padding:0 0 40px;margin:0 0 40px;border-bottom:1px solid var(--line)}
+.about-section:last-child{margin-bottom:0;padding-bottom:0;border-bottom:0}
+.about-section h3{font-family:var(--serif);font-size:27px;font-weight:500;line-height:1.5;margin:10px 0 22px}
+.about-section p:not(.about-section-label),.about-product{max-width:44em;font-size:15px;line-height:1.9;color:var(--ink-2);margin:0 0 14px}
+.about-journey{list-style:none;padding:0 0 0 12px;counter-reset:journey;margin-top:28px;max-width:44em}
+.about-journey>li{counter-increment:journey;position:relative;border-left:1px solid var(--line-2);padding:0 0 28px 36px}
+.about-journey>li:last-child{border-left-color:transparent;padding-bottom:0}
+.about-journey>li::before{content:counter(journey,decimal-leading-zero);position:absolute;left:-14px;top:2px;background:var(--surface-solid);padding:0 4px;color:var(--lilac-ink);font-size:12px;font-variant-numeric:tabular-nums}
+.about-journey h4,.about-tech-content h4{font-size:17px;font-weight:600;line-height:1.6;margin:0 0 8px}
+.about-product{padding-left:20px}
+.about-flow{list-style:none;padding:0;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));counter-reset:flow;margin-top:34px}
+.about-flow li{position:relative;counter-increment:flow;border-top:1px solid var(--line-2);padding:22px 16px 0 0}
+.about-flow li::before{content:counter(flow,decimal-leading-zero);position:absolute;top:-11px;left:0;background:var(--surface-solid);padding:0 6px 0 0;color:var(--lilac-ink);font-size:12px}
+.about-flow b{display:block;font-size:14px;font-weight:600;margin-bottom:8px}
+.about-flow span{font-size:12px;line-height:1.7;color:var(--ink-3);display:block}
+.about-technical summary{cursor:pointer;font-family:var(--serif);font-size:25px;line-height:1.6;padding:14px 0;min-height:44px}
+.about-tech-content{padding-top:16px;max-width:44em}
+.about-tech-content h4:not(:first-child){margin-top:28px}
+.about-tech-content ul{padding-left:20px;display:grid;gap:8px;color:var(--ink-2);font-size:14px;line-height:1.85}
+.about-tech-content p{font-size:14px!important}
+@media (max-width:639px){
+  .dn-head{padding:18px 24px 16px}.dn-head h2{font-size:27px}
+  .about-body{padding:28px 24px 48px}.about-section{padding-bottom:30px;margin-bottom:30px}
+  .about-section h3{font-size:24px}.about-journey>li{padding-left:26px}
+  .about-flow{grid-template-columns:1fr;margin:20px 0 0 12px}
+  .about-flow li{border-top:0;border-left:1px solid var(--line-2);padding:0 0 22px 28px}
+  .about-flow li:last-child{border-left-color:transparent;padding-bottom:0}
+  .about-flow li::before{top:2px;left:-13px;padding:0 4px}.about-flow b{margin-bottom:4px}
+  .about-flow span{font-size:13px}
+}
